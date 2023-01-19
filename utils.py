@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 # Data processing
 from sklearn.metrics import (accuracy_score, log_loss, precision_score, 
         recall_score, average_precision_score, precision_recall_curve, auc)
@@ -32,10 +33,12 @@ def setup_data(dataset, attributes, seed):
 
 def evaluate_model(X, X_prime, y, predictions, probabilities):
     """returns metrics for comparison for a single model"""
-    auditor_fp = gerryfair.model.Auditor(X_prime, y.values, 'FP')
-    auditor_fn = gerryfair.model.Auditor(X_prime, y.values, 'FN')
-    _,auditor_fp_violation = auditor_fp.audit(predictions)
-    _,auditor_fn_violation = auditor_fn.audit(predictions)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        auditor_fp = gerryfair.model.Auditor(X_prime, y.values, 'FP')
+        auditor_fn = gerryfair.model.Auditor(X_prime, y.values, 'FN')
+        _,auditor_fp_violation = auditor_fp.audit(predictions)
+        _,auditor_fn_violation = auditor_fn.audit(predictions)
 #     print('mean_marginal_fairness...')
 #     mean_marg_unfairness = mean_marginal_unfairness(false_positives(y, 
 #                                                       predictions),

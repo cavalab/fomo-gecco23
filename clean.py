@@ -74,7 +74,7 @@ def one_hot_code(df1, sens_dict):
     for c in cols:
         if isinstance(df1[c][0], str):
             column = df1[c]
-            df1 = df1.drop(c, 1)
+            df1 = df1.drop(columns=c, axis=1)
             unique_values = list(set(column))
             n = len(unique_values)
             if n > 2:

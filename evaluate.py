@@ -54,7 +54,6 @@ def evaluate(model_name, dataset, attributes, seed, rdir):
                 test_prob)
         })
         
-            
     runtime = time.process_time() - t0
     header = {
             'method':model_name,

@@ -1,0 +1,20 @@
+name: exp-fomo
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - scikit-learn
+  - jupyter
+  - xgboost
+  - seaborn
+  - numpy
+  - pytest
+  - pip
+  - deap
+  - ipdb
+  - tqdm
+  - pip:
+    - pymoo
+    - pmlb
+

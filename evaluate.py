@@ -16,6 +16,7 @@ def evaluate(model_name, dataset, attributes, seed, rdir):
     X_train, X_test, X_prime_train, X_prime_test, y_train, y_test, sens_cols = \
     setup_data(dataset, attributes, seed)
     dataset_name = dataset.split('/')[-1].split('.')[0]
+    print(f'X_train size: {X_train.shape}')
 
     # train algorithm
     alg = importlib.import_module(f"methods.{model_name}")

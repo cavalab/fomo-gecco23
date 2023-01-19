@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
+  - python=3.9
   - scikit-learn
   - jupyter
   - xgboost
@@ -14,7 +14,8 @@ dependencies:
   - deap
   - ipdb
   - tqdm
+  - pymoo
   - pip:
-    - pymoo
     - pmlb
+    - line_profiler
 

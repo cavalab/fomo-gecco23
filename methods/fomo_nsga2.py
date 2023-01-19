@@ -5,9 +5,10 @@ from .train_fomo import train
 from sklearn.linear_model import LogisticRegression
 
 est = FomoClassifier(
-    estimator = LogisticRegression(),
-    algorithm = NSGA2(pop_size=50),
+    estimator = LogisticRegression(n_jobs=1),
+    algorithm = NSGA2(),
     fairness_metrics=[metrics.subgroup_FNR],
     verbose=True,
-    batch_size=0
+    batch_size=0,
+    n_jobs=10
 )

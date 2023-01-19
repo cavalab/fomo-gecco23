@@ -1,5 +1,7 @@
 """Evaluate a method on a dataset"""
+import ipdb
 import copy
+import os
 from utils import setup_data,evaluate_model,get_hypervolumes
 import numpy as np
 import pandas as pd
@@ -12,6 +14,7 @@ def evaluate(model_name, dataset, attributes, seed, rdir):
     results.
     """
     print(f'training {model_name} on {dataset}, seed={seed}, rdir={rdir}')
+    os.makedirs(rdir, exist_ok=True)
     # data setup
     X_train, X_test, X_prime_train, X_prime_test, y_train, y_test, sens_cols = \
     setup_data(dataset, attributes, seed)
@@ -35,6 +38,10 @@ def evaluate(model_name, dataset, attributes, seed, rdir):
         train_probabilities, 
         test_probabilities
         )):
+        if len(train_prob.shape) > 1 and train_prob.shape[1] == 2:
+            train_prob = train_prob[:,1] 
+        if len(test_prob.shape) > 1 and test_prob.shape[1] == 2:
+            test_prob = test_prob[:,1] 
         performance.append({
             'method':model_name,
             'model':model_name+':archive('+str(i)+')',

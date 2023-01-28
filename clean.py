@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 def setup():
     parser = argparse.ArgumentParser(description='Fairness Data Cleaning')
@@ -65,9 +66,10 @@ def clean_dataset(dataset, attributes, centered):
 
 
 def center(X):
-    for col in X.columns:
-        X.loc[:, col] = X.loc[:, col]-np.mean(X.loc[:, col])
-    return X
+    return pd.DataFrame(StandardScaler().fit_transform(X), columns=X.columns)
+    # for col in X.columns:
+    #     X.loc[:, col] = X.loc[:, col]-np.mean(X.loc[:, col])
+    # return X
 
 def one_hot_code(df1, sens_dict):
     cols = df1.columns

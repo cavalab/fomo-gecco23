@@ -41,11 +41,9 @@ if __name__ == '__main__':
         # q = 'epistasis_normal,epistasis_normal,epistasis_normal,mooreai_normal'
         q = 'epistasis_normal'
 
-    lpc_options = '' if not args.LSF else '--lsf -q {Q} -m {M} -n_jobs {NJ}'.format(
-            Q=q, 
-            M=args.M, 
-            NJ=args.N_JOBS)
-
+    lpc_options = ''
+    if args.LSF: 
+        lpc_options = f'--lsf -q {q} -m {args.M} -n_jobs {args.N_JOBS}' 
 
     for f in args.datasets.split(','):
         dataset = 'GerryFair/dataset/'+f+'.csv'

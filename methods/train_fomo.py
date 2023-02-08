@@ -1,4 +1,5 @@
 import numpy as np
+from pymoo.termination import get_termination
 
 def train(est, X_train, X_prime_train, y_train, X_test, sens_cols,**kwargs):
 
@@ -8,6 +9,9 @@ def train(est, X_train, X_prime_train, y_train, X_test, sens_cols,**kwargs):
     est.fit(
         X_train, y_train, 
         protected_features=protected_features,
+        # termination = get_termination("time", "01:00:00")
+        termination = get_termination("time", "00:00:30")
+        # termination=('n_gen',100)
     )
     train_predictions = est.predict_archive(X_train)
     train_probabilities = est.predict_proba_archive(X_train)

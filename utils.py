@@ -2,9 +2,11 @@ import numpy as np
 import warnings
 # Data processing
 from sklearn.metrics import (accuracy_score, log_loss, precision_score, 
-        recall_score, average_precision_score, precision_recall_curve, auc)
+        recall_score, average_precision_score, precision_recall_curve, auc, 
+        roc_auc_score)
 from deap.tools import hypervolume
 from metrics import *
+from fomo.metrics import subgroup_FNR, subgroup_FPR
 from clean import clean_dataset
 from sklearn.model_selection import train_test_split
 import gerryfair 
@@ -13,9 +15,13 @@ from itertools import chain
 import os
 import matplotlib
 matplotlib.rcParams['pdf.fonttype'] = 42
-figsize=(4,4)
+figsize=(12,4)
+from fomo.metrics import subgroup_FPR_loss, subgroup_FNR_loss
 
-def setup_data(dataset, attributes, seed):
+def setup_data(dataset,  seed, attributes=None):
+
+    if attributes is None:
+        attributes = dataset.replace('.csv','_protected.csv')
     
     print('setting up data...') 
     dataname = dataset.split('/')[-1].split('.')[0]
@@ -31,7 +37,7 @@ def setup_data(dataset, attributes, seed):
     
     return X_train, X_test, X_prime_train, X_prime_test, y_train, y_test, sens_cols
 
-def evaluate_model(X, X_prime, y, predictions, probabilities):
+def evaluate_output(X, X_prime, y, predictions, probabilities):
     """returns metrics for comparison for a single model"""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -39,44 +45,31 @@ def evaluate_model(X, X_prime, y, predictions, probabilities):
         auditor_fn = gerryfair.model.Auditor(X_prime, y.values, 'FN')
         _,auditor_fp_violation = auditor_fp.audit(predictions)
         _,auditor_fn_violation = auditor_fn.audit(predictions)
-#     print('mean_marginal_fairness...')
-#     mean_marg_unfairness = mean_marginal_unfairness(false_positives(y, 
-#                                                       predictions),
-#                                                       X_prime)
-#     print('max_marginal_fairness...')
-#     max_marg_unfairness = max_marginal_unfairness(false_positives(y, 
-#                                                       predictions),
-#                                                       X_prime)
-#     print('mean_subgroup_fairness...')
-#     mean_sub_unfairness = mean_subgroup_unfairness(false_positives(y, 
-#                                                       predictions),
-#                                                       X_prime)
-#     print('max_subgroup_fairness...')
-#     max_sub_unfairness = max_subgroup_unfairness(false_positives(y, 
-#                                                       predictions),
-#                                                       X_prime)
+
+    # requires estimator
+    sg_fpr = subgroup_FPR_loss(y.values, predictions, X_prime)
+    sg_fnr = subgroup_FNR_loss(y.values, predictions, X_prime)
+
     accuracy = accuracy_score(y,predictions) 
     fpr = np.mean(false_positives(y,predictions))
     logloss = log_loss(y, probabilities) 
     mae = MAE(y, probabilities) 
     if np.array(predictions==0).all():
-        prec, recall, aps, auc_prc = 0, 0, 0, 0
+        prec, recall, aps, auc_prc, auroc = 0, 0, 0, 0, 0
     else:
         prec = precision_score(y, predictions) 
         recall = recall_score(y, predictions) 
         aps = average_precision_score(y, probabilities)
         pc, rc, _ = precision_recall_curve(y, probabilities)
         auc_prc = auc(rc,pc)
+        auc_roc = roc_auc_score(y,probabilities)
     
                
     scores = {
-#             'auditor_group':performance[0],
             'auditor_fp_violation':auditor_fp_violation,
             'auditor_fn_violation':auditor_fn_violation,
-#             'mean_subgroup_unfairness':mean_sub_unfairness,
-#             'max_subgroup_unfairness':max_sub_unfairness,
-#             'mean_marginal_unfairness':mean_marg_unfairness,
-#             'max_marginal_unfairness':max_marg_unfairness,
+            'subgroup_fpr':sg_fpr,
+            'subgroup_fnr':sg_fnr,
             'accuracy':accuracy,
             'fpr':fpr,
             'logloss':logloss,
@@ -84,7 +77,8 @@ def evaluate_model(X, X_prime, y, predictions, probabilities):
             'precision':prec,
             'recall':recall,
             'ave_precision_score':aps,
-            'auc_prc':auc_prc
+            'auc_prc':auc_prc,
+            'auc_roc':auc_roc
            } 
     
     return scores 
@@ -158,9 +152,10 @@ loss_metrics = {
 #     'precision':'1-Precision',
 #     'recall':'1-Recall',
     'ave_precision_score':'1-Average Precision Score',
-    'auc_prc':'1 - Area Under Precision-Recall Curve'
+    'auc_prc':'1 - Area Under Precision-Recall Curve',
+    'auc_roc':'1 - AUROC'
     }
-reverse_metrics = ['accuracy','precision','recall','ave_precision_score','auc_prc']
+reverse_metrics = ['accuracy','precision','recall','ave_precision_score','auc_prc','auc_roc']
 method_nice = {
     'gerryfair':'GerryFair',
     'gerryfair_xgb':'GerryFairGB',
@@ -212,8 +207,8 @@ def get_hypervolume(perf, xname, yname, reverse_x=False,
 
 def get_hypervolumes(perf):
     hv = [] 
-    for f,_ in fair_metrics.items():
-        for L,_ in loss_metrics.items():
+    for f in fair_metrics.keys():
+        for L in loss_metrics.keys():
             hv += get_hypervolume(perf, f, L, reverse_y = L in reverse_metrics)
                      
     return hv
@@ -338,7 +333,7 @@ def pareto_compare_plot(perf1,perf2,dataset_name,xname,yname,xname_nice,
     plt.xlabel(xname_nice)
     plt.ylabel(yname_nice)
 
-    plt.tight_layout()
+    # plt.tight_layout()
     if not os.path.exists('../paper/figs/pareto/'+rdir):
         os.mkdir('../paper/figs/pareto/'+rdir)
     savename = ('../paper/figs/pareto/'+rdir
@@ -448,7 +443,7 @@ def pareto_multicompare_plot(perfs,dataset_name,xname,yname,xname_nice,
     plt.xlabel(xname_nice)
     plt.ylabel(yname_nice)
 
-    plt.tight_layout()
+    # plt.tight_layout()
     if not os.path.exists('../paper/figs/pareto/'+rdir):
         os.mkdir('../paper/figs/pareto/'+rdir)
     savename = ('../paper/figs/pareto/'+rdir

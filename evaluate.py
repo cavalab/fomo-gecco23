@@ -2,22 +2,23 @@
 import ipdb
 import copy
 import os
-from utils import setup_data,evaluate_model,get_hypervolumes
+from utils import setup_data,evaluate_output,get_hypervolumes
 import numpy as np
 import pandas as pd
 import time
 import json
 import importlib
 
-def evaluate(model_name, dataset, attributes, seed, rdir):
+def evaluate(model_name, dataset, seed, rdir):
     """Evaluates the estimator in methods/{model_name}.py on dataset and stores
     results.
     """
     print(f'training {model_name} on {dataset}, seed={seed}, rdir={rdir}')
+
     os.makedirs(rdir, exist_ok=True)
     # data setup
     X_train, X_test, X_prime_train, X_prime_test, y_train, y_test, sens_cols = \
-    setup_data(dataset, attributes, seed)
+    setup_data(dataset, seed)
     dataset_name = dataset.split('/')[-1].split('.')[0]
     print(f'X_train size: {X_train.shape}')
 
@@ -48,9 +49,9 @@ def evaluate(model_name, dataset, attributes, seed, rdir):
             'model':model_name+':archive('+str(i)+')',
             'dataset':dataset_name,
             'seed':seed,
-            'train':evaluate_model(X_train, X_prime_train, y_train, train_pred, 
+            'train':evaluate_output(X_train, X_prime_train, y_train, train_pred, 
                 train_prob),
-            'test':evaluate_model(X_test, X_prime_test, y_test, test_pred, 
+            'test':evaluate_output(X_test, X_prime_test, y_test, test_pred, 
                 test_prob)
         })
         
@@ -82,8 +83,8 @@ if __name__ == '__main__':
         description="Evaluate a method on a dataset.", add_help=False)
     parser.add_argument('-data', action='store', type=str,
                         help='Data file to analyze')
-    parser.add_argument('-atts', action='store', type=str,
-                        help='File specifying protected attributes')
+    # parser.add_argument('-atts', action='store', type=str,
+    #                     help='File specifying protected attributes')
     parser.add_argument('-h', '--help', action='help',
                         help='Show this help message and exit.')
     parser.add_argument('-ml', action='store', default='xgb',type=str,
@@ -93,4 +94,4 @@ if __name__ == '__main__':
     parser.add_argument('-seed', action='store', default=42, type=int, help='Seed / trial')
     args = parser.parse_args()
 
-    evaluate( args.ml, args.data, args.atts, args.seed, args.rdir)
+    evaluate( args.ml, args.data, args.seed, args.rdir)

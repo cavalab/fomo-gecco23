@@ -9,8 +9,7 @@ def train(est, X_train, X_prime_train, y_train, X_test, sens_cols,**kwargs):
     est.fit(
         X_train, y_train, 
         protected_features=protected_features,
-        # termination = get_termination("time", "01:00:00")
-        termination = get_termination("time", "00:00:30")
+        termination = get_termination("time", "01:00:00")
         # termination=('n_gen',100)
     )
     train_predictions = est.predict_archive(X_train)

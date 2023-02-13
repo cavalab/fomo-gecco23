@@ -29,7 +29,14 @@ def setup_data(dataset,  seed, attributes=None):
     print('setting up data...') 
     X, X_prime, y = clean_dataset(dataset, attributes, centered=True)
     X_train, X_test, X_prime_train, X_prime_test, y_train, y_test = \
-        train_test_split(X, X_prime, y, test_size = 0.5, random_state=seed)
+        train_test_split(
+            X,
+            X_prime,
+            y,
+            test_size=0.5,
+            random_state=seed,
+            stratify=y
+        )
     print('positive labels in test:',np.sum(y_test==1))
     
     sens_df = pd.read_csv(attributes)
@@ -55,7 +62,7 @@ def evaluate_output(X, X_prime, y, predictions, probabilities):
     logloss = log_loss(y, probabilities) 
     mae = MAE(y, probabilities) 
     if np.array(predictions==0).all():
-        prec, recall, aps, auc_prc, auroc = 0, 0, 0, 0, 0
+        prec, recall, aps, auc_prc, auc_roc = 0, 0, 0, 0, 0
     else:
         prec = precision_score(y, predictions) 
         recall = recall_score(y, predictions) 
@@ -139,18 +146,11 @@ def front(obj1,obj2):
 fair_metrics = {
     'auditor_fp_violation':'Audit FP Violation $\gamma$',
     'auditor_fn_violation':'Audit FN Violation $\gamma$',
-#     'mean_subgroup_unfairness':'Mean Subgroup Unfairness',
-#     'max_subgroup_unfairness':'Max Subgroup Unfairness',
-#     'max_marginal_unfairness':'Max Marginal Unfairness',
-#     'mean_marginal_unfairness':'Mean Marginal Unfairness',
+    'subgroup_fpr': 'Subgroup FPR',
+    'subgroup_fnr': 'Subgroup FNR',
     }
 loss_metrics = {
-#     'fpr':'False Positive Rate',
     'accuracy':'1-Accuracy',
-#     'logloss':'Log Loss',
-#     'mae':'Mean Absolute Error',
-#     'precision':'1-Precision',
-#     'recall':'1-Recall',
     'ave_precision_score':'1-Average Precision Score',
     'auc_prc':'1 - Area Under Precision-Recall Curve',
     'auc_roc':'1 - AUROC'
